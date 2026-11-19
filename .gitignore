@@ -7,19 +7,23 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+# NOTE (waas-tools): these are anchored with a leading "/" so they only match
+# Python build output at the repo root. Unanchored, "lib/" and friends match at
+# any depth and silently swallow ordinary source directories -- e.g. the Chrome
+# extension's src/lib/. Keep the anchors.
 .Python
-build/
+/build/
 develop-eggs/
-dist/
-downloads/
+/dist/
+/downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+/wheels/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
@@ -221,3 +225,67 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---------------------------------------------------------------------------
+# waas-tools additions (beyond the stock GitHub Python template above)
+# ---------------------------------------------------------------------------
+
+# Secrets & customer data -- NEVER commit these.
+# This repo is public and mixes tooling with customer-facing WAF data.
+.env
+.env.*
+!.env.example
+*.local.json
+*.local.yaml
+*.local.yml
+secrets.json
+credentials.json
+*secret*
+*token*
+*apikey*
+*api_key*
+*.pem
+*.key
+!*.public.key
+*.p12
+*.pfx
+# Local scratch space for customer configs, exports, HAR files, etc.
+scratch/
+local/
+*.har
+
+# Node (no build step today, but tools may add one)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+dist/
+.vite/
+
+# Chrome extension packaging artifacts
+*.crx
+*.pem.bak
+web-ext-artifacts/
+
+# OS
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+desktop.ini
+.DS_Store
+.DS_Store?
+._*
+$RECYCLE.BIN/
+
+# Editors / IDEs
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code local overrides (settings.json IS committed; .local is not)
+.claude/settings.local.json
