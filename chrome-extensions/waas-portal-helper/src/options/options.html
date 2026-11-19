@@ -89,6 +89,41 @@
       </section>
 
       <section class="card">
+        <h2>API capture</h2>
+        <p class="help">
+          Turn this on from the toolbar popup when you need to know what one of
+          the portal's own API calls returns — the groundwork for any feature
+          that shows portal data this extension can't otherwise see.
+        </p>
+        <details class="howto">
+          <summary>How to run a capture</summary>
+          <div class="howto__body">
+            <p>
+              Turn <strong>API capture</strong> on in the popup, then
+              <strong>reload the portal page</strong> — the tap only injects on
+              navigation. Open DevTools and each API call appears in the console,
+              or use <strong>Copy capture</strong> in the popup to get the whole
+              log at once.
+            </p>
+            <p>
+              <strong>Values are redacted.</strong> Key names are kept, strings
+              are reduced to a kind and a length
+              (<code>string:hostname(21)</code>), and numbers appear only where
+              the key names a count or a limit (<code>maxHostnames: 30</code>).
+              So a capture tells you an endpoint returns seven hostnames without
+              telling anyone which seven.
+            </p>
+            <p>
+              Prefer the popup's copy button over the console. The console also
+              holds the portal's own logging, which is <em>not</em> redacted —
+              and the redaction is a safety net, not a guarantee. Read a capture
+              before pasting it into a ticket, a chat, or this repository.
+            </p>
+          </div>
+        </details>
+      </section>
+
+      <section class="card">
         <h2>Behavior</h2>
 
         <label class="field field--inline">
@@ -127,6 +162,12 @@
           are stored in Chrome's synced extension storage, which means they travel
           with your Chrome profile — avoid putting customer names in a label if that
           matters to you.
+        </p>
+        <p class="help">
+          API capture observes calls the portal was making anyway. The responses
+          it holds stay in that tab's memory, are capped in size, are never
+          written to disk, and go no further than the console and the popup's
+          copy button.
         </p>
       </section>
     </div>

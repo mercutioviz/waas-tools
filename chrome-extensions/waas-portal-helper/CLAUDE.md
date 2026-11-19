@@ -19,6 +19,11 @@ Everything shipped so far holds to this:
 If a new feature genuinely needs portal markup, the honest sequence is: ask the
 user to find the selector with the inspector, then build on what they report.
 
+For portal **data** rather than markup, there's now a second route: API capture
+(`features/api-capture.js`) logs the portal's own API calls with values
+redacted, so the user can hand back a response shape that's safe to paste. Ask
+for a capture before designing against a guessed payload.
+
 ## Portal markup verified from the live DOM
 
 Everything here was read off a logged-in session. Treat anything *not* in this
@@ -31,6 +36,21 @@ list as unknown.
 | Modals | Portaled as a **direct child of `<body>`**, outside `#root` |
 | Scroll lock | MUI sets `<body style="overflow: hidden">` while a modal is open and removes it on close |
 | FUP dialog | Root `[data-testid="fup-violation-dialog"]`; buttons `fup-dialog-close-icon`, `fup-dialog-close-button`, `fup-dialog-view-reports` |
+| Endpoint grid cell | Renders `<hostname> (N of M Domains)`. Matched on that **text**, not a selector — see `lib/endpoints.js`. |
+
+## Portal API verified from a live capture
+
+Read off a capture of a logged-in session. Same rule as the markup table:
+anything not listed is unknown.
+
+| | |
+|---|---|
+| Auth | Portal → API calls carry `credentials: include` and no `auth-api` header. The session is **cookie-based**; the REST token in [docs/waas-api-notes.md](../../docs/waas-api-notes.md) is a separate thing the extension never needs. |
+| Endpoint list | `GET /v2/waasapi/applications/{id}/endpoints/?searchPhrase=` → `{count, next, previous, results[]}` |
+| Endpoint record | `{id, protocol, cname, dps_service: {port, domains[], …}, managed_service: {name, …}, …}` — **`dps_service.domains` holds every domain**, which is what makes the hover card possible. |
+| Same data, nested | `GET /v2/waasapi/applications/{id}/` carries the same endpoint records. |
+| Plan limits | `licensed_features: {endpoint, endpoint_domain, origin_server, sni_certificate, …}` on the application response. |
+| Routing by name | Some v4 calls put the **application name** in the path: `/v4/waasapi/applications/Customer%20App%2001/cdn/`. Mind this when redacting a URL. |
 
 Two consequences worth remembering:
 
@@ -56,6 +76,32 @@ its feature flag is off — it runs repeatedly, not once.
 `src/content/boot.js` wires these up and isolates failures, so one broken
 feature can't take down the others. Register new features in its `FEATURES`
 array.
+
+## The page-world tap
+
+`src/content/api-tap.js` is the one file that doesn't follow the rules above,
+and the reasons are worth knowing before touching it:
+
+| | |
+|---|---|
+| Runs in the **MAIN world** | The isolated world has its own `fetch`; it cannot observe the page's calls at all. Needs `"world": "MAIN"` in the manifest, which is why `minimum_chrome_version` is **111**. |
+| Runs at **document_start** | The portal's first API calls land long before `document_idle`, when `content.js` boots. |
+| Has **no `chrome.*`** | No storage, so it can't read settings and can't decide whether to be on. It buffers unconditionally and only sends anything when a client asks. |
+| **No imports** | Same constraint as `content.js` — a classic IIFE. Keep logic out of it; `lib/api-shape.js` is where interpretation belongs. |
+
+Consequences:
+
+- **Entries from the tap are unredacted.** They're the page's own data. Anything
+  that displays, logs, or copies one must go through `lib/api-shape.js` first.
+- **Go through `lib/tap-client.js`.** A new feature needing API data subscribes;
+  it does not patch `fetch` a second time.
+- **A reloaded extension has no tap in open tabs.** Content scripts inject on
+  navigation only, so the client has a handshake timeout and tells the user to
+  reload rather than sitting there silently.
+- **The redaction word lists are a safety mechanism, not configuration.**
+  Widening `SAFE_WORDS` or `COUNT_WORDS` in `lib/api-shape.js` lets more real
+  values reach a clipboard. Raise it with the user; don't do it to make output
+  prettier.
 
 ## MV3 gotchas that bite here
 
@@ -91,7 +137,8 @@ array.
 ## Verification
 
 Run the logic tests after touching `lib/rules.js`, `lib/portal.js`,
-`lib/dialogs.js`, `features/deep-link.js`, or the contrast helper:
+`lib/dialogs.js`, `lib/api-shape.js`, `features/deep-link.js`, or the contrast
+helper:
 
 ```bash
 ELECTRON_RUN_AS_NODE=1 "$LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe" test/logic.test.mjs

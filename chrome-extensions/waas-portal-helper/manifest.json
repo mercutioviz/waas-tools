@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "WaaS Portal Helper",
-  "version": "0.1.0",
-  "description": "Quality-of-life additions for the Barracuda WAF-as-a-Service portal: tenant safety banner, copy deep link, and a DOM inspector.",
+  "version": "0.2.0",
+  "description": "Quality-of-life additions for the Barracuda WAF-as-a-Service portal: tenant safety banner, copy deep link, DOM inspector, and a redacting API capture.",
 
   "icons": {
     "16": "icons/icon16.png",
@@ -25,6 +25,13 @@
       "js": ["src/content/content.js"],
       "css": ["src/content/content.css"],
       "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://waas.barracudanetworks.com/*"],
+      "js": ["src/content/api-tap.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
       "all_frames": false
     }
   ],
@@ -63,5 +70,5 @@
     }
   },
 
-  "minimum_chrome_version": "102"
+  "minimum_chrome_version": "111"
 }

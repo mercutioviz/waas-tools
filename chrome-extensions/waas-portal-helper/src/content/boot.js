@@ -15,8 +15,17 @@ import * as accountBanner from '../features/account-banner.js';
 import * as deepLink from '../features/deep-link.js';
 import * as inspector from '../features/inspector.js';
 import * as dialogDismisser from '../features/dialog-dismisser.js';
+import * as apiCapture from '../features/api-capture.js';
+import * as endpointDomains from '../features/endpoint-domains.js';
 
-const FEATURES = [accountBanner, deepLink, inspector, dialogDismisser];
+const FEATURES = [
+  accountBanner,
+  deepLink,
+  inspector,
+  dialogDismisser,
+  apiCapture,
+  endpointDomains,
+];
 
 let settings = null;
 
@@ -78,7 +87,26 @@ export async function boot() {
         context: getContext(),
         banner: accountBanner.currentMatch(),
         inspectorActive: inspector.isActive(),
+        captureCount: apiCapture.isCapturing() ? apiCapture.captureCount() : null,
       });
+      return false;
+    }
+
+    // The popup copies the capture log rather than the user copying it out of
+    // the console, which also holds the portal's own unredacted logging.
+    if (message.type === 'getCaptureLog') {
+      sendResponse({
+        ok: true,
+        capturing: apiCapture.isCapturing(),
+        count: apiCapture.captureCount(),
+        text: apiCapture.captureLog(),
+      });
+      return false;
+    }
+
+    if (message.type === 'clearCaptures') {
+      apiCapture.clearCaptures();
+      sendResponse({ ok: true });
       return false;
     }
 

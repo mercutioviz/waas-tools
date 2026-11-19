@@ -10,7 +10,7 @@ be useful.
 
 | Tool | What it does | Path |
 |---|---|---|
-| WaaS Portal Helper | Chrome extension (MV3) adding quality-of-life features to the WAF-as-a-Service portal: a tenant safety banner, copy-deep-link shortcut, and a DOM inspector. | [chrome-extensions/waas-portal-helper/](chrome-extensions/waas-portal-helper/) |
+| WaaS Portal Helper | Chrome extension (MV3) adding quality-of-life features to the WAF-as-a-Service portal: a tenant safety banner, copy-deep-link shortcut, DOM inspector, dialog dismisser, full endpoint domain lists on hover, and a redacting API capture. | [chrome-extensions/waas-portal-helper/](chrome-extensions/waas-portal-helper/) |
 
 ## Layout
 

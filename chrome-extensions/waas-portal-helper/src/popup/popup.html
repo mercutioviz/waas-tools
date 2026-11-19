@@ -48,6 +48,30 @@
           <small>Closes the Fair Usage Policy popup on load</small>
         </span>
       </label>
+
+      <label class="toggle">
+        <input type="checkbox" data-feature="endpointDomains" />
+        <span class="toggle__text">
+          <strong>Endpoint domains</strong>
+          <small>Hover a grid cell to see every domain</small>
+        </span>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" data-feature="apiCapture" />
+        <span class="toggle__text">
+          <strong>API capture</strong>
+          <small>Logs portal API calls to the console, values redacted</small>
+        </span>
+      </label>
+    </section>
+
+    <section class="capture" id="capture" hidden>
+      <div class="capture__row">
+        <button type="button" id="copy-captures">Copy capture</button>
+        <button type="button" id="clear-captures" class="link">Clear</button>
+      </div>
+      <div class="capture__note" id="capture-note"></div>
     </section>
 
     <footer class="foot">

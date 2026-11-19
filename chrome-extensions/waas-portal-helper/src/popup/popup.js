@@ -4,12 +4,28 @@ const statusEl = document.getElementById('status');
 const lineEl = document.getElementById('status-line');
 const detailEl = document.getElementById('status-detail');
 
+const captureEl = document.getElementById('capture');
+const captureNoteEl = document.getElementById('capture-note');
+const copyBtn = document.getElementById('copy-captures');
+
+/** The content script is the only thing that knows what's been captured. */
+async function askPage(type) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return null;
+  try {
+    return await chrome.tabs.sendMessage(tab.id, { type });
+  } catch {
+    return null; // not on the portal, or the page hasn't loaded the script yet
+  }
+}
+
 async function renderToggles() {
   const { features } = await getSettings();
   for (const input of document.querySelectorAll('[data-feature]')) {
     input.checked = Boolean(features[input.dataset.feature]);
     input.addEventListener('change', () => {
       setFeatureEnabled(input.dataset.feature, input.checked);
+      if (input.dataset.feature === 'apiCapture') renderCapture();
     });
   }
 }
@@ -65,6 +81,66 @@ async function renderStatus() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// API capture
+// ---------------------------------------------------------------------------
+
+async function renderCapture() {
+  const { features } = await getSettings();
+  if (!features.apiCapture) {
+    captureEl.hidden = true;
+    return;
+  }
+
+  captureEl.hidden = false;
+  const response = await askPage('getCaptureLog');
+
+  if (!response?.ok) {
+    setCaptureNote('Open a portal tab to capture its API calls.', true);
+    return;
+  }
+  if (!response.count) {
+    setCaptureNote('Nothing captured yet — reload the portal page.', true);
+    return;
+  }
+  setCaptureNote(
+    `${response.count} call${response.count === 1 ? '' : 's'} captured. ` +
+      `Values are redacted, but read it over before sharing.`,
+    false,
+  );
+}
+
+function setCaptureNote(text, disableCopy) {
+  captureNoteEl.textContent = text;
+  copyBtn.disabled = disableCopy;
+  copyBtn.style.opacity = disableCopy ? '0.5' : '';
+  copyBtn.style.cursor = disableCopy ? 'default' : '';
+}
+
+copyBtn.addEventListener('click', async () => {
+  const response = await askPage('getCaptureLog');
+  if (!response?.ok || !response.text) {
+    setCaptureNote("Couldn't read the capture from this tab.", true);
+    return;
+  }
+  try {
+    // The popup has focus and a real click behind it, so no execCommand
+    // fallback is needed here (unlike the content script's keyboard commands).
+    await navigator.clipboard.writeText(response.text);
+    copyBtn.textContent = 'Copied';
+    setTimeout(() => {
+      copyBtn.textContent = 'Copy capture';
+    }, 1400);
+  } catch {
+    setCaptureNote('Copy failed — the log is also in the page console.', false);
+  }
+});
+
+document.getElementById('clear-captures').addEventListener('click', async () => {
+  await askPage('clearCaptures');
+  renderCapture();
+});
+
 document.getElementById('open-options').addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
   window.close();
@@ -79,3 +155,4 @@ document.getElementById('open-shortcuts').addEventListener('click', () => {
 
 renderToggles();
 renderStatus();
+renderCapture();

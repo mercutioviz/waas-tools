@@ -17,6 +17,19 @@ const { readableTextColor } = await imp('src/features/account-banner.js');
 const { isStableToken } = await imp('src/lib/dom.js');
 const { parseSelectorList, formatSelectorList, isSafeSelector, findCloseControl } =
   await imp('src/lib/dialogs.js');
+const {
+  classifyString,
+  isSensitiveKey,
+  showsNumberValue,
+  summarize,
+  render,
+  describeBody,
+  redactUrl,
+  entryLine,
+  formatBytes,
+} = await imp('src/lib/api-shape.js');
+const { harvestDomains, indexDomains, parseDomainCell, looksLikeHostname } =
+  await imp('src/lib/endpoints.js');
 
 let pass = 0;
 let fail = 0;
@@ -221,6 +234,207 @@ eq(
 eq('a button with no text does not throw', findCloseControl(fakeDialog({ buttons: [{}] })), null);
 eq('a root without querySelector yields null', findCloseControl({}), null);
 eq('a missing root yields null', findCloseControl(null), null);
+
+console.log('api capture - string classification');
+eq('hostname recognised', classifyString('marketing.example.com'), 'hostname');
+eq('wildcard hostname recognised', classifyString('*.example.com'), 'hostname');
+eq('email beats hostname', classifyString('someone@example.com'), 'email');
+eq('uuid recognised', classifyString('3f2504e0-4f89-11d3-9a0c-0305e82c3301'), 'uuid');
+eq('url recognised', classifyString('https://example.com/a'), 'url');
+eq('ipv4 recognised', classifyString('10.0.0.1'), 'ipv4');
+eq('iso date recognised', classifyString('2026-01-01T00:00:00Z'), 'date');
+eq('all-caps constant recognised', classifyString('ACTIVE'), 'constant');
+eq('protocol word recognised', classifyString('https'), 'constant');
+eq('an ordinary word is text', classifyString('Marketing Site'), 'text');
+eq('a long opaque run is not text', classifyString('abcdef0123456789abcdef0123456789'), 'opaque');
+
+console.log('api capture - key classification');
+eq('camelCase key is split', isSensitiveKey('maxHostnames'), true);
+eq('snake_case key is split', isSensitiveKey('backend_ip'), true);
+eq('a neutral key is not sensitive', isSensitiveKey('createdAt'), false);
+eq('count keys show their value', showsNumberValue('hostnameCount'), true);
+eq('limit keys show their value', showsNumberValue('maxEndpoints'), true);
+eq('a plain count shows', showsNumberValue('count'), true);
+eq('an id never shows', showsNumberValue('accountId'), false);
+eq('a serial number is not a count', showsNumberValue('serialNumber'), false);
+eq('a case number is not a count', showsNumberValue('caseNumber'), false);
+eq('an identifying word vetoes a count', showsNumberValue('userCount'), false);
+eq('a limit keeps its value despite a sensitive word', showsNumberValue('maxHostnames'), true);
+eq('a bound is recognised by its container', showsNumberValue('endpoint_domain', 'licensed_features'), true);
+eq('the same key alone stays hidden', showsNumberValue('endpoint_domain'), false);
+eq('the veto still applies inside a limit container', showsNumberValue('account_id', 'licensed_features'), false);
+eq(
+  'plan limits are shown, ids beside them are not',
+  describeBody({ licensed_features: { endpoint_domain: 30, account: 12345 } }),
+  '{\n  licensed_features: {\n    endpoint_domain: number(30),\n    account: number\n  }\n}',
+);
+
+console.log('api capture - value redaction');
+eq('a hostname becomes a class and length', describeBody({ hostname: 'app.example.com' }), '{\n  hostname: string:hostname(15)\n}');
+eq('an id number is hidden', describeBody({ accountId: 4821 }), '{\n  accountId: number\n}');
+eq('a limit number is shown', describeBody({ maxDomains: 30 }), '{\n  maxDomains: number(30)\n}');
+eq('a boolean is shown', describeBody({ enabled: true }), '{\n  enabled: boolean(true)\n}');
+eq('null is shown', describeBody({ next: null }), '{\n  next: null\n}');
+eq('a constant is shown verbatim', describeBody({ status: 'ACTIVE' }), '{\n  status: "ACTIVE"\n}');
+eq(
+  'a constant under a naming key is withheld',
+  describeBody({ name: 'ACME' }),
+  '{\n  name: string:text(4)\n}',
+);
+eq('an empty object renders inline', describeBody({}), '{}');
+eq('an empty array renders inline', describeBody({ items: [] }), '{\n  items: []\n}');
+
+console.log('api capture - arrays');
+eq(
+  'a string array reports count and a length range',
+  describeBody({ hostnames: ['a.example.com', 'much-longer.example.com'] }),
+  '{\n  hostnames: [ ×2 string:hostname(13..23) ]\n}',
+);
+eq(
+  'object array items are merged into one shape',
+  describeBody({ results: [{ id: 1, port: 80 }, { id: 2, port: 443, extra: true }] }),
+  '{\n  results: [ ×2\n    {\n      id: number,\n      port: number(80|443),\n      extra: boolean(true)\n    }\n  ]\n}',
+);
+eq(
+  'array items inherit the array key, so domains stay withheld',
+  describeBody({ domains: ['ACTIVE'] }),
+  '{\n  domains: [ ×1 string:text(6) ]\n}',
+);
+
+console.log('api capture - url redaction');
+const ORIGIN = 'https://waas.barracudanetworks.com';
+eq(
+  'numeric and uuid path segments are replaced',
+  redactUrl(`${ORIGIN}/v4/waasapi/applications/12345/endpoints/3f2504e0-4f89-11d3-9a0c-0305e82c3301`, ORIGIN),
+  '/v4/waasapi/applications/{id}/endpoints/{uuid}',
+);
+eq(
+  'a cross-origin call keeps its host',
+  redactUrl('https://api.waas.barracudanetworks.com/v4/waasapi/applications/', ORIGIN),
+  'https://api.waas.barracudanetworks.com/v4/waasapi/applications/',
+);
+eq(
+  'query keys survive, values are classified',
+  redactUrl(`${ORIGIN}/x?account=98765&page=2&status=ACTIVE`, ORIGIN),
+  '/x?account={redacted}&page=2&status=ACTIVE',
+);
+eq(
+  'a hash route is redacted too',
+  redactUrl(`${ORIGIN}/x#/apps/55512/settings`, ORIGIN),
+  '/x#/apps/{id}/settings',
+);
+eq(
+  'a filename is kept, not mistaken for a hostname',
+  redactUrl(`${ORIGIN}/assets/config.html`, ORIGIN),
+  '/assets/config.html',
+);
+eq(
+  'route words survive',
+  redactUrl(`${ORIGIN}/v4/waasapi/applications_id_name/json_security/access-token`, ORIGIN),
+  '/v4/waasapi/applications_id_name/json_security/access-token',
+);
+eq(
+  'an application name in a path is replaced',
+  redactUrl(`${ORIGIN}/v4/waasapi/applications/Customer%20App%2001/cdn/`, ORIGIN),
+  '/v4/waasapi/applications/{name}/cdn/',
+);
+eq(
+  'a bare capitalised name is replaced too',
+  redactUrl(`${ORIGIN}/apps/AcmeCorp/edit`, ORIGIN),
+  '/apps/{name}/edit',
+);
+eq(
+  'a hostname in a path is still replaced',
+  redactUrl(`${ORIGIN}/apps/marketing.example.com/edit`, ORIGIN),
+  '/apps/{host}/edit',
+);
+eq('a malformed url does not throw', redactUrl('::::'), '(unparseable url)');
+
+console.log('api capture - entry lines');
+eq(
+  'entry line carries method, redacted url, status and size',
+  entryLine(
+    { method: 'GET', url: `${ORIGIN}/v4/waasapi/applications/12345/`, status: 200, durationMs: 412, bytes: 2048 },
+    ORIGIN,
+  ),
+  'GET /v4/waasapi/applications/{id}/ → 200 · 412 ms · 2.0 KB',
+);
+eq(
+  'a failed request says so',
+  entryLine({ method: 'POST', url: `${ORIGIN}/x`, error: 'NetworkError' }, ORIGIN),
+  'POST /x → failed (NetworkError)',
+);
+eq('bytes format under a kilobyte', formatBytes(512), '512 B');
+eq('bytes format over a megabyte', formatBytes(2 * 1024 * 1024), '2.0 MB');
+
+console.log('api capture - depth and width limits');
+eq(
+  'deep nesting is cut off',
+  describeBody({ a: { b: { c: { d: { e: { f: { g: { h: 1 } } } } } } } }),
+  '{\n  a: {\n    b: {\n      c: {\n        d: {\n          e: {\n            f: {\n              g: …\n            }\n          }\n        }\n      }\n    }\n  }\n}',
+);
+const wide = (n) => render(summarize(Object.fromEntries(Array.from({ length: n }, (_, i) => [`k${i}`, true]))));
+eq('an object inside the key cap is not truncated', wide(50).includes('more key'), false);
+eq('a wider object still closes cleanly', wide(82).split('\n').pop(), '}');
+eq('the truncation note names how many were dropped', wide(82).includes('… 2 more keys'), true);
+
+console.log('endpoint domains - harvesting');
+// The shape the live portal actually returns, from a capture of
+// GET /v2/waasapi/applications/{id}/endpoints/?searchPhrase=
+const endpointsResponse = {
+  count: 2,
+  next: null,
+  results: [
+    { id: 11, dps_service: { port: 443, domains: ['a.example.com', 'b.example.com'] } },
+    { id: 12, dps_service: { port: 80, domains: ['c.example.com'] } },
+  ],
+};
+eq(
+  'domain lists are found whatever their depth',
+  harvestDomains(endpointsResponse),
+  [['a.example.com', 'b.example.com'], ['c.example.com']],
+);
+eq(
+  'the nested copy inside an application object is found too',
+  harvestDomains({ application: { endpoints: [{ dps_service: { domains: ['x.example.com'] } }] } }),
+  [['x.example.com']],
+);
+eq('hostnames key is accepted as well', harvestDomains({ hostnames: ['y.example.com'] }), [['y.example.com']]);
+eq('non-hostname strings are dropped', harvestDomains({ domains: ['not a domain', 'z.example.com'] }), [['z.example.com']]);
+eq('an empty domain list is skipped', harvestDomains({ domains: [] }), []);
+eq('a null body does not throw', harvestDomains(null), []);
+eq('a wildcard domain counts', looksLikeHostname('*.example.com'), true);
+eq('a bare word is not a domain', looksLikeHostname('marketing'), false);
+
+console.log('endpoint domains - indexing');
+const domainIndex = indexDomains(harvestDomains(endpointsResponse));
+eq('every domain maps to its own list', domainIndex.get('b.example.com'), ['a.example.com', 'b.example.com']);
+eq('lookups are case-insensitive by key', domainIndex.get('c.example.com'), ['c.example.com']);
+eq('an unknown domain is absent', domainIndex.has('nope.example.com'), false);
+eq('a later response replaces an earlier one', indexDomains([['a.example.com', 'new.example.com']], domainIndex).get('a.example.com'), ['a.example.com', 'new.example.com']);
+
+console.log('endpoint domains - cell text');
+eq(
+  'the portal cell format is parsed',
+  parseDomainCell('marketing.example.com (7 of 30 Domains)'),
+  { domain: 'marketing.example.com', shown: 7, total: 30 },
+);
+eq(
+  'split elements and ragged whitespace still parse',
+  parseDomainCell('\n  marketing.example.com\n   (7 of 30 Domains)  '),
+  { domain: 'marketing.example.com', shown: 7, total: 30 },
+);
+eq(
+  'a singular domain is handled',
+  parseDomainCell('solo.example.com (1 of 30 Domain)'),
+  { domain: 'solo.example.com', shown: 1, total: 30 },
+);
+eq('case does not matter', parseDomainCell('a.example.com (2 of 5 DOMAINS)').shown, 2);
+eq('a cell without the count phrase is ignored', parseDomainCell('marketing.example.com'), null);
+eq('an unrelated cell is ignored', parseDomainCell('Enabled'), null);
+eq('a whole table of text is refused', parseDomainCell('x '.repeat(300) + '(1 of 2 Domains)'), null);
+eq('a count with no hostname still parses', parseDomainCell('(3 of 30 Domains)').domain, null);
+eq('non-string input is ignored', parseDomainCell(undefined), null);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

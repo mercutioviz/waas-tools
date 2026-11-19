@@ -14,6 +14,10 @@ export const DEFAULTS = {
     deepLink: true,
     inspector: true,
     dialogDismisser: true,
+    // Off by default: it logs every portal API call to the console, which is
+    // noise unless you're actively working out what an endpoint returns.
+    apiCapture: false,
+    endpointDomains: true,
   },
 
   /** @type {BannerRule[]} */
