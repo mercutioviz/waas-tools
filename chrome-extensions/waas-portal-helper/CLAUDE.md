@@ -13,9 +13,32 @@ Everything shipped so far holds to this:
 - The deep-link feature uses only `location.href` and `document.title`.
 - The account banner matches on **user-written** rules, not inferred ones.
 - The inspector exists precisely to discover real selectors.
+- The dialog dismisser works off a user-editable selector list. Its one shipped
+  default was read off the live DOM, not guessed — see below.
 
 If a new feature genuinely needs portal markup, the honest sequence is: ask the
 user to find the selector with the inspector, then build on what they report.
+
+## Portal markup verified from the live DOM
+
+Everything here was read off a logged-in session. Treat anything *not* in this
+list as unknown.
+
+| | |
+|---|---|
+| App root | `#root` — gets `aria-hidden="true"` while a modal is open |
+| UI framework | MUI v5. Emotion classes (`css-19bfmdu`) rehash every release — **never** match on them. `data-testid` attributes are stable. |
+| Modals | Portaled as a **direct child of `<body>`**, outside `#root` |
+| Scroll lock | MUI sets `<body style="overflow: hidden">` while a modal is open and removes it on close |
+| FUP dialog | Root `[data-testid="fup-violation-dialog"]`; buttons `fup-dialog-close-icon`, `fup-dialog-close-button`, `fup-dialog-view-reports` |
+
+Two consequences worth remembering:
+
+- **Never remove a dialog node.** It lives in a React portal container; tearing
+  it out produces a `removeChild` crash later. Click its close button and let
+  MUI unmount it.
+- **Hiding a modal is not closing it.** CSS alone leaves the scroll lock and
+  `aria-hidden` in place forever, because MUI only reverses them on close.
 
 ## Architecture
 
@@ -54,7 +77,11 @@ array.
 ## Conventions
 
 - All injected CSS lives in `src/content/content.css`, every class prefixed
-  `wph-`, with `!important` on anything the portal might override.
+  `wph-`, with `!important` on anything the portal might override. **One
+  exception:** `features/dialog-dismisser.js` generates a `<style>` element at
+  runtime, because its selectors come from user settings and can't be known
+  ahead of time. Selectors are screened by `isSafeSelector()` before being
+  interpolated, and emitted one rule each so a bad entry can't take out the set.
 - The banner attaches to `document.documentElement`, not `body`, so a SPA
   re-render of the page body can't remove it.
 - Never `innerHTML` anything derived from page content or user settings — the
@@ -64,7 +91,7 @@ array.
 ## Verification
 
 Run the logic tests after touching `lib/rules.js`, `lib/portal.js`,
-`features/deep-link.js`, or the contrast helper:
+`lib/dialogs.js`, `features/deep-link.js`, or the contrast helper:
 
 ```bash
 ELECTRON_RUN_AS_NODE=1 "$LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe" test/logic.test.mjs

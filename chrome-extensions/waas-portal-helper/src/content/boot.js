@@ -14,8 +14,9 @@ import { getContext, onLocationChange } from '../lib/portal.js';
 import * as accountBanner from '../features/account-banner.js';
 import * as deepLink from '../features/deep-link.js';
 import * as inspector from '../features/inspector.js';
+import * as dialogDismisser from '../features/dialog-dismisser.js';
 
-const FEATURES = [accountBanner, deepLink, inspector];
+const FEATURES = [accountBanner, deepLink, inspector, dialogDismisser];
 
 let settings = null;
 

@@ -13,10 +13,21 @@ export const DEFAULTS = {
     accountBanner: true,
     deepLink: true,
     inspector: true,
+    dialogDismisser: true,
   },
 
   /** @type {BannerRule[]} */
   bannerRules: [],
+
+  /**
+   * Dialogs closed automatically, as CSS selectors matching the dialog's root.
+   *
+   * The default is the portal's Fair Usage Policy modal, which reappears on
+   * every fresh page load with no way to silence it from the UI. Its
+   * `data-testid` was read off the live DOM — unlike the MUI emotion classes
+   * beside it (`css-19bfmdu`), it survives a portal redeploy.
+   */
+  dismissSelectors: ['[data-testid="fup-violation-dialog"]'],
 
   /** Push page content down by the banner height instead of overlapping it. */
   bannerOffsetsPage: true,

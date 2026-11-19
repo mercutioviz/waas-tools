@@ -53,6 +53,42 @@
       </section>
 
       <section class="card">
+        <h2>Dismiss dialogs</h2>
+        <p class="help">
+          Dialogs listed here are closed as soon as they appear, before they can
+          paint. One CSS selector per line, each matching a dialog's outermost
+          element.
+        </p>
+        <details class="howto">
+          <summary>How this works</summary>
+          <div class="howto__body">
+            <p>
+              The extension clicks the dialog's own close button rather than
+              deleting it, so the portal still releases the page scroll lock it
+              applies while a dialog is open.
+            </p>
+            <p>
+              To add one, press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> on the
+              portal, click the dialog's outer edge to copy its selector, and paste
+              it here. Prefer a <code>data-testid</code> if the element has one —
+              the portal's other class names are build hashes that change on every
+              release.
+            </p>
+            <p>
+              The default entry is the <strong>Fair Usage Policy</strong> popup that
+              appears on each fresh load of the applications page. Note that it
+              reports a real account condition — suppressing it means you won't be
+              told when that condition changes.
+            </p>
+          </div>
+        </details>
+
+        <textarea id="dismissSelectors" class="mono" spellcheck="false"
+          placeholder='[data-testid="example-dialog"]'></textarea>
+        <div class="rule__err" id="dismissSelectors-err" hidden></div>
+      </section>
+
+      <section class="card">
         <h2>Behavior</h2>
 
         <label class="field field--inline">

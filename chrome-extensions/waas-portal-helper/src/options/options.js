@@ -1,5 +1,6 @@
 import { getSettings, saveSettings, newRule } from '../lib/settings.js';
 import { safeRegex } from '../lib/rules.js';
+import { parseSelectorList, formatSelectorList, isSafeSelector } from '../lib/dialogs.js';
 
 const rulesEl = document.getElementById('rules');
 const savedEl = document.getElementById('saved');
@@ -19,6 +20,7 @@ function scheduleSave() {
       bannerRules: settings.bannerRules,
       bannerOffsetsPage: settings.bannerOffsetsPage,
       deepLinkFormat: settings.deepLinkFormat,
+      dismissSelectors: settings.dismissSelectors,
       debug: settings.debug,
     });
     flashSaved();
@@ -55,6 +57,24 @@ function validate(rule) {
     return 'Text pattern is not a valid regular expression.';
   }
 
+  return '';
+}
+
+/**
+ * Check every selector in the dismiss list.
+ * @returns {string} an error message naming the first bad line, or ''
+ */
+function validateSelectors(list) {
+  for (const selector of list) {
+    if (!isSafeSelector(selector)) {
+      return `"${selector}" can't be used — remove any { } < > @ characters.`;
+    }
+    try {
+      document.querySelector(selector);
+    } catch {
+      return `"${selector}" is not a valid CSS selector.`;
+    }
+  }
   return '';
 }
 
@@ -159,6 +179,18 @@ function renderGlobals() {
   document.getElementById('bannerOffsetsPage').checked = settings.bannerOffsetsPage;
   document.getElementById('deepLinkFormat').value = settings.deepLinkFormat;
   document.getElementById('debug').checked = settings.debug;
+  document.getElementById('dismissSelectors').value = formatSelectorList(
+    settings.dismissSelectors,
+  );
+  showSelectorProblem(validateSelectors(settings.dismissSelectors));
+}
+
+function showSelectorProblem(problem) {
+  const field = document.getElementById('dismissSelectors');
+  const errEl = document.getElementById('dismissSelectors-err');
+  field.classList.toggle('invalid', Boolean(problem));
+  errEl.textContent = problem;
+  errEl.hidden = !problem;
 }
 
 // ---------------------------------------------------------------------------
@@ -251,6 +283,14 @@ for (const id of ['bannerOffsetsPage', 'debug']) {
 
 document.getElementById('deepLinkFormat').addEventListener('change', (event) => {
   settings.deepLinkFormat = event.target.value;
+  scheduleSave();
+});
+
+document.getElementById('dismissSelectors').addEventListener('input', (event) => {
+  settings.dismissSelectors = parseSelectorList(event.target.value);
+  // Saved either way — the content script skips bad entries and keeps the rest,
+  // so a half-typed selector doesn't block the others from taking effect.
+  showSelectorProblem(validateSelectors(settings.dismissSelectors));
   scheduleSave();
 });
 

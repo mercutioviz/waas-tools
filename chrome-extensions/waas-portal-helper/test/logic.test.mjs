@@ -15,6 +15,8 @@ const { findIdCandidates, isPortal, getContext } = await imp('src/lib/portal.js'
 const { formatLink, cleanTitle } = await imp('src/features/deep-link.js');
 const { readableTextColor } = await imp('src/features/account-banner.js');
 const { isStableToken } = await imp('src/lib/dom.js');
+const { parseSelectorList, formatSelectorList, isSafeSelector, findCloseControl } =
+  await imp('src/lib/dialogs.js');
 
 let pass = 0;
 let fail = 0;
@@ -151,6 +153,74 @@ eq('css-modules hash rejected', isStableToken('Header__title__a1b2c3'), false);
 eq('emotion class rejected', isStableToken('css-1q2w3e'), false);
 eq('long digit run rejected', isStableToken('col-12345'), false);
 eq('short digit suffix allowed', isStableToken('col-12'), true);
+
+console.log('dismiss list parsing');
+eq(
+  'lines are trimmed and blanks dropped',
+  parseSelectorList('  [data-testid="a"]  \n\n   \n.b\n'),
+  ['[data-testid="a"]', '.b'],
+);
+eq('an already-stored array passes through', parseSelectorList(['.a', '.b']), ['.a', '.b']);
+eq('non-string, non-array yields empty', parseSelectorList(undefined), []);
+eq('formats back to one per line', formatSelectorList(['.a', '.b']), '.a\n.b');
+eq('formats a missing list as empty text', formatSelectorList(undefined), '');
+
+console.log('dismiss selector safety');
+eq('a data-testid selector is safe', isSafeSelector('[data-testid="fup-violation-dialog"]'), true);
+eq('a brace is refused', isSafeSelector('.a { color: red }'), false);
+eq('an at-rule is refused', isSafeSelector('@media print'), false);
+eq('an angle bracket is refused', isSafeSelector('.a <script'), false);
+eq('a comment close is refused', isSafeSelector('.a */'), false);
+eq('empty is refused', isSafeSelector(''), false);
+eq('whitespace only is refused', isSafeSelector('   '), false);
+eq('non-string is refused', isSafeSelector(null), false);
+
+console.log('close control discovery');
+// Stand-in for a dialog root: only querySelector/querySelectorAll/textContent.
+const fakeDialog = ({ attrs = {}, buttons = [] } = {}) => ({
+  querySelector(sel) {
+    if (sel === 'BAD[[') throw new Error('invalid selector');
+    return attrs[sel] || null;
+  },
+  querySelectorAll(sel) {
+    return sel === 'button' ? buttons : [];
+  },
+});
+const TESTID = '[data-testid*="close" i]';
+const ARIA = '[aria-label="Close" i]';
+
+eq(
+  'data-testid wins over aria-label',
+  findCloseControl(
+    fakeDialog({ attrs: { [TESTID]: { name: 'icon' }, [ARIA]: { name: 'aria' } } }),
+  ).name,
+  'icon',
+);
+eq(
+  'falls back to aria-label',
+  findCloseControl(fakeDialog({ attrs: { [ARIA]: { name: 'aria' } } })).name,
+  'aria',
+);
+eq(
+  'falls back to a button labelled Close',
+  findCloseControl(
+    fakeDialog({ buttons: [{ textContent: 'View Reports' }, { textContent: ' Close ' }] }),
+  ).textContent,
+  ' Close ',
+);
+eq(
+  'button text match is case-insensitive',
+  findCloseControl(fakeDialog({ buttons: [{ textContent: 'CLOSE' }] })).textContent,
+  'CLOSE',
+);
+eq(
+  'a dialog with no close control yields null',
+  findCloseControl(fakeDialog({ buttons: [{ textContent: 'View Reports' }] })),
+  null,
+);
+eq('a button with no text does not throw', findCloseControl(fakeDialog({ buttons: [{}] })), null);
+eq('a root without querySelector yields null', findCloseControl({}), null);
+eq('a missing root yields null', findCloseControl(null), null);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

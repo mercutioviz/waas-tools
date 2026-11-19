@@ -12,6 +12,7 @@ No build step, no dependencies, no network requests.
 | **Account banner** | — | Paints a colored strip across the top of the portal naming the tenant you're in, so a change never lands in the wrong customer's account. |
 | **Copy deep link** | `Alt+Shift+C` | Copies the current page's title and URL, ready to paste into a ticket or chat. |
 | **DOM inspector** | `Alt+Shift+I` | Hover to see a redeploy-resistant CSS selector for any element, click to copy it. Esc exits. |
+| **Dismiss dialogs** | — | Closes listed popups as they appear, before they paint. Ships configured for the Fair Usage Policy modal that returns on every page load. |
 
 Each can be toggled from the toolbar popup.
 
@@ -74,11 +75,40 @@ Rules are evaluated top to bottom and the first match wins, so put specific
 rules above general ones. A catch-all like `waas\.barracudanetworks\.com` at the
 bottom in a neutral color is a reasonable safety net.
 
+## Dismissing dialogs
+
+The portal pops a **Fair Usage Policy Limit Exceeded** modal on every fresh load
+of the applications page, with no "don't show again" option. The dismiss feature
+removes it, and the options page takes a list of any other dialogs you want gone
+— one CSS selector per line, each matching a dialog's outermost element.
+
+It works in two steps, and both matter:
+
+1. A generated stylesheet hides the listed dialogs, so nothing flashes on screen.
+2. The dialog's **own close button** is clicked, so the portal runs its normal
+   teardown.
+
+Step 2 is not optional. While a dialog is open the portal locks page scrolling
+(`body { overflow: hidden }`) and hides the app from screen readers, and it only
+undoes that when the dialog closes. Hiding a dialog without closing it would
+leave the page permanently unscrollable. The extension never deletes the dialog
+element — it belongs to a React portal, and removing it out from under React
+causes a crash later in the page's life.
+
+To add a dialog: press `Alt+Shift+I`, click the dialog's outer edge to copy its
+selector, and paste it into the list. Prefer a `data-testid` where one exists —
+the portal's other class names (`css-19bfmdu` and similar) are build hashes that
+change on every release.
+
+> The FUP dialog reports a real account condition. Suppressing it means you
+> won't be told when that condition changes.
+
 ## Settings
 
 - **Offset page content** — pushes the page down so the banner doesn't cover the
   portal's own header. Turn it off if it leaves a gap, or if the portal's header
   is itself fixed-position and ignores the offset.
+- **Dismiss dialogs** — the selector list described above.
 - **Deep link format** — title + URL, markdown link, or bare URL.
 - **Verbose logging** — logs to the page console prefixed `[waas-helper]`.
 
@@ -101,6 +131,10 @@ internal shorthand instead.
 - **Page offset is approximate.** Body padding can't move a fixed-position
   portal header. Hence the toggle.
 - **Top-level frames only.** The content script doesn't run in iframes.
+- **A dialog that refuses to close stays hidden.** If its close button can't be
+  found or clicking it doesn't unmount the dialog, the extension gives up after
+  three tries, leaves the dialog hidden, and releases the scroll lock by hand.
+  The page stays usable, but a hidden modal remains mounted.
 
 ## Ideas for later
 
@@ -139,9 +173,9 @@ Reload too. Options and popup changes just need the page reopened.
 
 ### Tests
 
-The pure logic (rule matching, URL parsing, link formatting, contrast) is
-covered by a dependency-free test suite. Node isn't installed on this machine,
-but VS Code bundles one:
+The pure logic (rule matching, URL parsing, link formatting, contrast, dismiss
+selector handling) is covered by a dependency-free test suite. Node isn't
+installed on this machine, but VS Code bundles one:
 
 ```bash
 CODE="$LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe"
@@ -149,7 +183,7 @@ ELECTRON_RUN_AS_NODE=1 "$CODE" test/logic.test.mjs
 ```
 
 With a normal Node install: `node test/logic.test.mjs`. The suite locates the
-source relative to itself, so it runs from any working directory. 45 assertions,
+source relative to itself, so it runs from any working directory. 66 assertions,
 no dependencies, exits non-zero on failure.
 
 What it does *not* cover: anything needing a real DOM or the `chrome` APIs —
