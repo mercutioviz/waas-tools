@@ -1,0 +1,170 @@
+/**
+ * Styles injected into the WaaS portal.
+ *
+ * Everything is namespaced `wph-` and leans on !important: we're a guest in
+ * someone else's stylesheet and the portal's rules may be more specific.
+ * z-index sits just below the 32-bit max so portal modals can't cover us.
+ */
+
+:root {
+  --wph-banner-height: 30px;
+  --wph-z: 2147483000;
+  --wph-font: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --wph-mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, monospace;
+}
+
+/* --------------------------------------------------------------------------
+   Account banner
+   -------------------------------------------------------------------------- */
+
+.wph-banner {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: var(--wph-z) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+  height: var(--wph-banner-height) !important;
+  padding: 0 10px !important;
+  font: 600 13px/1 var(--wph-font) !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+  pointer-events: auto !important;
+}
+
+.wph-banner__dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  opacity: 0.85 !important;
+  flex: 0 0 auto !important;
+}
+
+.wph-banner__label {
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  text-transform: uppercase !important;
+}
+
+.wph-banner__close {
+  flex: 0 0 auto !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: inherit !important;
+  font: 700 18px/1 var(--wph-font) !important;
+  cursor: pointer !important;
+  opacity: 0.7 !important;
+  padding: 0 4px !important;
+}
+
+.wph-banner__close:hover {
+  opacity: 1 !important;
+}
+
+/* Push the page down so the banner doesn't cover the portal's own header.
+   Toggleable via the "Offset page content" option, because a portal header
+   that is itself position:fixed won't respond to body padding. */
+html.wph-has-banner body {
+  padding-top: var(--wph-banner-height) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Toast
+   -------------------------------------------------------------------------- */
+
+.wph-toast {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  z-index: calc(var(--wph-z) + 2) !important;
+  max-width: 70vw !important;
+  padding: 9px 16px !important;
+  border-radius: 6px !important;
+  background: #1f2429 !important;
+  color: #fff !important;
+  font: 500 13px/1.4 var(--wph-font) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+  opacity: 0 !important;
+  transform: translate(-50%, 8px) !important;
+  transition: opacity 140ms ease, transform 140ms ease !important;
+  pointer-events: none !important;
+  overflow-wrap: anywhere !important;
+}
+
+.wph-toast--visible {
+  opacity: 1 !important;
+  transform: translate(-50%, 0) !important;
+}
+
+.wph-toast[data-variant="success"] { background: #11633f !important; }
+.wph-toast[data-variant="error"]   { background: #8c1d1d !important; }
+
+/* --------------------------------------------------------------------------
+   Inspector
+   -------------------------------------------------------------------------- */
+
+.wph-inspect-box {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: calc(var(--wph-z) + 1) !important;
+  background: rgba(11, 95, 165, 0.18) !important;
+  outline: 2px solid #0b5fa5 !important;
+  outline-offset: -1px !important;
+  pointer-events: none !important;
+  transition: transform 40ms linear, width 40ms linear, height 40ms linear !important;
+}
+
+.wph-inspect-panel {
+  position: fixed !important;
+  bottom: 12px !important;
+  left: 12px !important;
+  z-index: calc(var(--wph-z) + 1) !important;
+  max-width: min(620px, 60vw) !important;
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  background: rgba(20, 24, 28, 0.96) !important;
+  color: #e8eaed !important;
+  font: 400 12px/1.5 var(--wph-mono) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45) !important;
+  pointer-events: none !important;
+}
+
+.wph-inspect-panel__hint {
+  margin-bottom: 8px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #9aa0a6 !important;
+  font-family: var(--wph-font) !important;
+  font-size: 11px !important;
+}
+
+.wph-inspect-row {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 2px !important;
+}
+
+.wph-inspect-key {
+  flex: 0 0 62px !important;
+  color: #7fb2e5 !important;
+  text-align: right !important;
+}
+
+.wph-inspect-val {
+  flex: 1 1 auto !important;
+  overflow-wrap: anywhere !important;
+  color: #e8eaed !important;
+}
+
+/* The selector is the thing you came for — make it the brightest row. */
+.wph-inspect-row:first-child .wph-inspect-val {
+  color: #8ce99a !important;
+  font-weight: 600 !important;
+}

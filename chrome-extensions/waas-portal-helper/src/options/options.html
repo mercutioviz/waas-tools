@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WaaS Portal Helper — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="head">
+        <img src="../../icons/icon48.png" alt="" width="28" height="28" />
+        <div>
+          <h1>WaaS Portal Helper</h1>
+          <p class="sub">Settings for <code>waas.barracudanetworks.com</code></p>
+        </div>
+        <span class="saved" id="saved" hidden>Saved</span>
+      </header>
+
+      <section class="card">
+        <h2>Account banner</h2>
+        <p class="help">
+          Rules decide which tenant you're looking at and how loudly to say so.
+          The first matching rule wins, so put the most specific ones first.
+        </p>
+        <details class="howto">
+          <summary>How to write a rule</summary>
+          <div class="howto__body">
+            <p>
+              <strong>URL match</strong> — a regular expression tested against the full
+              page URL. Good when an account ID appears in the address, e.g.
+              <code>/accounts/12345\b</code>.
+            </p>
+            <p>
+              <strong>Element text</strong> — a CSS selector whose text names the
+              account. Press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> on the portal
+              to turn on the inspector, click the element showing the account name, and
+              paste the copied selector here. Leave the label blank to use that text
+              verbatim, or add an optional regex to extract part of it.
+            </p>
+            <p>
+              <strong>Label backreferences</strong> — <code>$0</code> is the whole match
+              (or the element's text), <code>$1</code>–<code>$9</code> are capture
+              groups. Example: label <code>$0 — PRODUCTION</code>.
+            </p>
+          </div>
+        </details>
+
+        <div id="rules"></div>
+
+        <div class="row-actions">
+          <button type="button" id="add-rule">Add rule</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Behavior</h2>
+
+        <label class="field field--inline">
+          <input type="checkbox" id="bannerOffsetsPage" />
+          <span>
+            <strong>Offset page content below the banner</strong>
+            <small>
+              Turn off if the banner leaves a gap or the portal's own header still
+              sits underneath it.
+            </small>
+          </span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Deep link format</span>
+          <select id="deepLinkFormat">
+            <option value="plain">Title + URL on two lines</option>
+            <option value="markdown">Markdown link</option>
+            <option value="url">URL only</option>
+          </select>
+        </label>
+
+        <label class="field field--inline">
+          <input type="checkbox" id="debug" />
+          <span>
+            <strong>Verbose console logging</strong>
+            <small>Logs feature activity to the page console, prefixed <code>[waas-helper]</code>.</small>
+          </span>
+        </label>
+      </section>
+
+      <section class="card card--quiet">
+        <h2>Privacy</h2>
+        <p class="help">
+          This extension makes no network requests and sends nothing anywhere. Rules
+          are stored in Chrome's synced extension storage, which means they travel
+          with your Chrome profile — avoid putting customer names in a label if that
+          matters to you.
+        </p>
+      </section>
+    </div>
+
+    <script src="options.js" type="module"></script>
+  </body>
+</html>

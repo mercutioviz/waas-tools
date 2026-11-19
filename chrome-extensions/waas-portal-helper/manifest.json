@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "WaaS Portal Helper",
+  "version": "0.1.0",
+  "description": "Quality-of-life additions for the Barracuda WAF-as-a-Service portal: tenant safety banner, copy deep link, and a DOM inspector.",
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "permissions": ["storage", "clipboardWrite"],
+
+  "host_permissions": ["https://waas.barracudanetworks.com/*"],
+
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://waas.barracudanetworks.com/*"],
+      "js": ["src/content/content.js"],
+      "css": ["src/content/content.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/content/boot.js",
+        "src/features/*.js",
+        "src/lib/*.js"
+      ],
+      "matches": ["https://waas.barracudanetworks.com/*"]
+    }
+  ],
+
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "WaaS Portal Helper",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "options_page": "src/options/options.html",
+
+  "commands": {
+    "copy-deep-link": {
+      "suggested_key": { "default": "Alt+Shift+C" },
+      "description": "Copy a deep link to the current portal page"
+    },
+    "toggle-inspector": {
+      "suggested_key": { "default": "Alt+Shift+I" },
+      "description": "Toggle the DOM inspector overlay"
+    }
+  },
+
+  "minimum_chrome_version": "102"
+}

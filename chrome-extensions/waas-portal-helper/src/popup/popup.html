@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>WaaS Portal Helper</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <img src="../../icons/icon48.png" alt="" width="20" height="20" />
+      <h1>WaaS Portal Helper</h1>
+    </header>
+
+    <section class="status" id="status">
+      <div class="status__line" id="status-line">Checking page&hellip;</div>
+      <div class="status__detail" id="status-detail"></div>
+    </section>
+
+    <section class="features">
+      <label class="toggle">
+        <input type="checkbox" data-feature="accountBanner" />
+        <span class="toggle__text">
+          <strong>Account banner</strong>
+          <small>Shows which tenant you're in</small>
+        </span>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" data-feature="deepLink" />
+        <span class="toggle__text">
+          <strong>Copy deep link</strong>
+          <small><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></small>
+        </span>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" data-feature="inspector" />
+        <span class="toggle__text">
+          <strong>DOM inspector</strong>
+          <small><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd></small>
+        </span>
+      </label>
+    </section>
+
+    <footer class="foot">
+      <button type="button" id="open-options">Banner rules &amp; settings</button>
+      <button type="button" id="open-shortcuts" class="link">Edit shortcuts</button>
+    </footer>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,211 @@
+:root {
+  --fg: #1f2429;
+  --muted: #6b7280;
+  --line: #e4e7eb;
+  --accent: #0b5fa5;
+  --danger: #b00020;
+  --bg: #f4f6f8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 28px 20px 60px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.5 ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+.wrap { max-width: 820px; margin: 0 auto; }
+
+code, kbd {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: #e8ebee;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.head h1 { margin: 0; font-size: 18px; }
+.sub { margin: 1px 0 0; color: var(--muted); font-size: 12.5px; }
+
+.saved {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #d8efdd;
+  color: #11633f;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Cards ------------------------------------------------------------------- */
+
+.card {
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.card--quiet { background: #fbfcfd; }
+
+.card h2 { margin: 0 0 6px; font-size: 14px; }
+
+.help { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+
+.howto {
+  margin-bottom: 16px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fafbfc;
+}
+
+.howto summary { cursor: pointer; font-size: 13px; font-weight: 500; }
+.howto__body { margin-top: 8px; font-size: 13px; color: #434a52; }
+.howto__body p { margin: 0 0 8px; }
+.howto__body p:last-child { margin-bottom: 0; }
+
+/* Rules ------------------------------------------------------------------- */
+
+.empty {
+  padding: 22px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+.rule {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--swatch, var(--danger));
+  border-radius: 8px;
+  background: #fff;
+}
+
+.rule[data-enabled="false"] { opacity: 0.55; }
+
+.rule__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rule__top input[type="color"] {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+}
+
+.rule__label { flex: 1 1 auto; }
+
+.rule__grid {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 8px;
+}
+
+.rule__grid--three { grid-template-columns: 150px 1fr 1fr; }
+
+input[type="text"], select {
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+}
+
+input[type="text"]:focus, select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+input.invalid {
+  border-color: var(--danger);
+  background: #fdf3f4;
+}
+
+input[type="checkbox"] { accent-color: var(--accent); }
+
+.mono { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+
+.rule__err {
+  margin-top: 6px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+/* Buttons ----------------------------------------------------------------- */
+
+button {
+  padding: 6px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover { filter: brightness(1.08); }
+
+.icon-btn {
+  padding: 4px 8px;
+  border-color: var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.icon-btn:hover { color: var(--fg); background: #f1f3f5; filter: none; }
+.icon-btn--danger:hover { color: var(--danger); border-color: var(--danger); }
+
+.row-actions { margin-top: 12px; }
+
+/* Fields ------------------------------------------------------------------ */
+
+.field { display: block; margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+
+.field--inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.field--inline span { display: flex; flex-direction: column; }
+.field--inline strong { font-weight: 500; }
+.field--inline small { color: var(--muted); font-size: 12.5px; }
+
+.field__label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.field select { max-width: 300px; }
